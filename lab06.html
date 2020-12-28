@@ -1,83 +1,197 @@
-<HEAD>
-<script src='bresenham.js' type='text/javascript'></script>
-<script src='borderfill.js' type='text/javascript'></script>
-<BODY>
-<canvas id='lab07.html' width='500' height='500'></canvas>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Fill polygon</title>
+
+<style>
+
+#cvs{
+border: 2px solid;
+}
+</style>
+</head>
+<body>
+
+<canvas id="cvs" height="700" width="700"></canvas>
+<div>
+<button type="button" onclick="polygon()" style="width: 100px;">Фигура</button>
+<button type="button" onclick="pixel();" style="width: 100px">Заливка</button>
+<button type="button" id="clear" style="width: 100px">Удалить</button>
+</div>
+
 <script>
-	var canvas = document.getElementById('lab07.html');
-	var ctx = canvas.getContext("2d");
+var cvs = document.getElementById("cvs"),
+ctx = cvs.getContext("2d"),
 
-	var w = canvas.width, h = canvas.height;
-	var maxy = 0, miny = canvas.height;	
-	var parray = new Array();
-	var n = 0;
-	var state = 0;
+poly = [];
 
-	function drawPoly(ctx, poly) {
-		for (var i=1; i<n; i++) {
-			Line(ctx, poly[2*i], poly[2*i+1],
-					poly[2*i-2], poly[2*i-1]);
-		}
-		Line(ctx, poly[2*n-2], poly[2*n-1], poly[0], poly[1]);
-	}
+var B = 'rgb(255,20,255)', A = 'rgb(20,255,20)';
 
-	canvas.addEventListener('click', function(e) {
-			if (state == 0) {
-				parray[2*n] 	= e.offsetX;
-				parray[2*n+1] 	= e.offsetY;
-				if (n!=0) {
-					Line(ctx, parray[2*n], parray[2*n+1], 
-						parray[2*n-2], parray[2*n-1]);
-				}
-				if (maxy < parray[2*n+1]) maxy = parray[2*n+1];
-				if (miny > parray[2*n+1]) miny = parray[2*n+1];
-				n++;
-			} else if (state == 1) {
-			}
-		});
+var button = document.getElementById('clear');
+button.addEventListener('click',clear,false);
 
+var poly_lis = function(event)
+{
+m_click(event, 0);
+}
 
-	canvas.oncontextmenu = function() { 
-		if (n>1) {
-			Line(ctx, parray[2*n-2], parray[2*n-1], parray[0], parray[1]);
-		} 
+var pix_lis = function(event)
+{
+m_click(event, 1);
+}
 
+function m_click(event,type)
+{
+var x, y;
+var rect = cvs.getBoundingClientRect(),
+x = event.clientX - rect.left,
+y = event.clientY - rect.top;
+event.preventDefault();
 
-		borderFill(ctx, parray);
+if(type == 0)
+{
+if(event.which == 1)
+{
+poly.push([x, y]);
+ctx.fillStyle = B;
+ctx.strokeStyle = B;
+if(poly.length == 1) drPixel([x, y]);
+if(poly.length > 1) drLine(poly[poly.length - 2], poly[poly.length - 1]);
+}
+else if(event.which == 3)
+{
+drLine(poly[poly.length - 1], poly[0]);
+poly = [];
+}
+}
+else if(type == 1)
+{
+ctx.fillStyle = A;
+ctx.strokeStyle = A;
+drPixel([x,y]);
+fill([x,y]);
+}
 
-		state = 1;
+}
 
-		// Преобразование
-		var M = [	1, 0, 0, 40, 
-					0, 1, 0, 20,
-					0, 0, 1, 0, 
-					0, 0, 0, 1];	
-		var Rz = [	Math.cos(0.5), -1*Math.sin(0.5), 0, 0, 
-					Math.sin(0.5), Math.cos(0.5), 0, 0,
-					0, 0, 1, 0, 
-					0, 0, 0, 1];	
+function drPixel(pt)
+{
+ctx.fillRect(pt[0], pt[1], 1, 1);
+}
 
-		function multMv(m, v) {
-			var r = new Array();
-			for (var i=0; i<4; i++) {
-				r[i] = 0;
-				for (var j=0; j<4; j++) {
-					r[i] += m[i*4+j]*v[j];
-				}
-			}	
-			return r;
-		}
+function drLine(pt1,pt2)
+{
+var x0 = pt1[0], x1 = pt2[0], y0 = pt1[1], y1 = pt2[1];
+var dX = Math.abs(x1 - x0);
+var dY = Math.abs(y1 - y0);
+var signX = x0 < x1 ? 1 : -1;
+var signY = y0 < y1 ? 1 : -1;
 
-		var narray = new Array();
-		for (var i=0; i<n; i++) {
-			var tmp = multMv(Rz, [parray[2*i], parray[2*i+1], 0, 1] );
-			narray[2*i] = tmp[0]; narray[2*i+1] = tmp[1];
-		}
-		borderFill(ctx, narray);
-		drawPoly(ctx, narray);	
-		drawPoly(ctx, parray);	
-		return false;
-	}
+var error = dX - dY;
+
+ctx.fillRect(x1, y1, 1, 1);
+while(x0 != x1 || y0 != y1)
+{
+ctx.fillRect(x0, y0, 1, 1);
+var error2 = error * 2;
+
+if(error2 > -dY)
+{
+error -= dY;
+x0 += signX;
+}
+if(error2 < dX)
+{
+error += dX;
+y0 += signY;
+}
+}
+}
+
+function fill(dot)
+{
+var stk = [];
+stk.push(dot);
+
+while(stk.length > 0)
+{
+var pop = stk.pop();
+var x_0 = pop[0];
+while(equiv_2([x_0 - 1, pop[1]]) == false)
+x_0--;
+
+var x_1 = pop[0];
+while(equiv_2([x_1 + 1, pop[1]]) == false)
+x_1++;
+
+drLine([x_0,pop[1]],[x_1,pop[1]]);
+
+bott:
+for(let i = x_0; i <= x_1; i++)
+{
+if(equiv_2([i,pop[1] - 1]) == false && equiv_1([i,pop[1] - 1]) == false)
+{
+stk.push([i,pop[1] - 1]);
+break bott;
+}
+}
+
+top:
+for(let i = x_0; i <= x_1; i++)
+{
+if(equiv_2([i,pop[1] + 1]) == false && equiv_1([i,pop[1] + 1]) == false)
+{
+stk.push([i, pop[1] + 1]);
+break top;
+}
+}
+}
+}
+
+function col(pt)
+{
+var imageData = ctx.getImageData(pt[0],pt[1],1,1);
+return imageData.data;
+}
+
+function equiv_2(pt)
+{
+if(col(pt)[0] == 30 && col(pt)[1] == 89 && col(pt)[2] == 69)
+return true;
+return false;
+}
+
+function equiv_1(pt)
+{
+if(col(pt)[0] == 63 && col(pt)[1] == 136 && col(pt)[2] == 143)
+return true;
+return false;
+}
+
+function clear()
+{
+ctx.clearRect(0,0,700,700);
+cvs.removeEventListener('click', poly_lis,false);
+cvs.removeEventListener('contextmenu', poly_lis,false);
+cvs.removeEventListener('click', pix_lis,false);
+poly = [];
+}
+
+function polygon()
+{
+cvs.addEventListener('click',poly_lis,false);
+cvs.addEventListener('contextmenu',poly_lis,false);
+cvs.removeEventListener('click', pix_lis,false);
+}
+
+function pixel()
+{
+cvs.addEventListener('click',pix_lis,false);
+cvs.removeEventListener('click', poly_lis,false);
+cvs.removeEventListener('contextmenu', poly_lis,false);
+}
+
 </script>
-</BODY>
-</HEAD>
+</body>
+</html>
