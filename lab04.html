@@ -1,0 +1,71 @@
+<HTML>
+
+<BODY>
+
+<title>LR4</title>
+
+    <canvas width="1920" height="2000" id="canvas1">
+    </canvas>
+
+    <script>
+	let x0 = 0, y0=0;
+	var canvas = document.getElementById("canvas1");
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 718, 690);
+        let img = new Image;
+        img.src = "1.png";
+	img.setAttribute( 'crossOrigin', 'Anonymous');
+	
+      img.onload = function() {
+        ctx.drawImage(img, 0, 0);
+        let idata = ctx.getImageData(0, 0, img.width, img.height);
+
+        for (let i = 0; i < idata.data.length; i += 4) {
+            let gray = (idata.data[i] + idata.data[i + 1] + idata.data[i + 2]) / 3;
+            idata.data[i] = idata.data[i + 1] = idata.data[i + 2] = gray;
+        }
+        ctx.putImageData(idata, x0, y0+img.height+40);
+
+	let width = img.width;
+	let height = img.height;
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+		let a = [255, 255, 255, 255, 255, 255,255,255];
+
+                
+                    a[0] = idata.data[4 * ((x - 1) + width * (y - 1))];
+               
+                    a[1] = idata.data[4 * (x + width * (y - 1))];
+               
+                    a[2] = idata.data[4 * ((x + 1) + width * (y - 1))];
+               
+                    a[3] = idata.data[4 * ((x - 1) + width * y)];
+               
+                    a[4] = idata.data[4 * ((x + 1) + width * y)];
+               
+                    a[5] = idata.data[4 * ((x - 1) + width * (y + 1))];
+                
+                    a[6] = idata.data[4 * (x + width * (y + 1))];
+               
+                    a[7] = idata.data[4 * ((x + 1) + width * (y + 1))];
+
+
+                let Gy = (a[0] * (-1) + a[1] * (-2) + a[2] * (-1) + a[5] * (1) + a[6] * (2) + a[7] * (1));
+                let Gx = (a[0] * (-1) + a[2] * (1) + a[3] * (-2) + a[4] * (2) + a[5] * (-1) + a[7] * (1));
+                let G = Math.sqrt(Gx * Gx + Gy * Gy);
+
+                idata.data[4 * (x + width * y)] = G;
+                idata.data[4 * (x + width * y) + 1] = G;
+                idata.data[4 * (x + width * y) + 2] = G;
+                idata.data[4 * (x + width * y) + 3] = 255;
+            }
+        }
+        ctx.putImageData(idata, x0+width+50, y0);
+
+
+    }
+
+    </script>
+</BODY>
+</HTML>
