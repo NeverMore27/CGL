@@ -1,0 +1,90 @@
+<HTML>
+<BODY>
+
+<canvas id = "lab10"></canvas>
+<script>
+	let canvas = document.getElementById('lab8');
+	let ctx = canvas.getContext('2d');
+	let a = 20, b = 40, c = 10
+	let shift = [
+			1, 0, 0, a,
+			0, 1, 0, b,
+			0, 0, 1, c,
+			0, 0, 0, 1
+			];
+	let sx = 2, sy = 0.5, sz = 3;
+	let scale = [
+			sx, 0, 0, 0,
+			0, sy, 0, 0,
+			0, 0, sz, 0,
+			0, 0, 0, 1
+			];
+let alpha = 30*Math.PI/180
+let rotx = [
+			1, 0, 0, 0,
+			0, Math.cos(alpha), (-1)*Math.sin(alpha), 0,
+			0, Math.sin(alpha), (-1)*Math.cos(alpha), 0,
+			0, 0, 			0,		  1
+	];
+
+let roty = [
+			Math.cos(alpha),  0, (-1)*Math.sin(alpha), 0,
+			0, 		  1,		0,	   0,
+			Math.sin(alpha),  0,     Math.cos(alpha),  0,
+			0,                0, 	  0,		   1
+	];
+
+let rotz = [
+			Math.cos(alpha), (-1)*Math.sin(alpha), 0, 0,
+			Math.sin(alpha), Math.cos(alpha),  0, 0,
+			0, 		  0,      1, 		   0,
+			0,                0, 	  0,		   1
+	];
+let point = [100, 50, 20, 1];
+
+function MV_product(M, v){
+	let res = []
+	for (let i=0; i<4; i++){
+		res[i] = 0;
+		for (let j=0; j<4; j++){
+			res[i] += M[i*4+j]*v[j];
+		}
+	}
+	return res;
+}
+
+
+function MM_product(M1, M2){
+	let R = []
+	for (let i=0; i<4; i++){
+		for (let j=0; j<4; j++){
+			R[i*4+j] = 0;
+			for (let k=0; k<4; k++){
+				R[i*4+j] +=M1[i*4+k]*M2[k*4+j];
+			}
+		}
+	}
+return R
+}
+let psize = 4;
+ctx.fillRect(point[0], point[1], psize, psize);
+let p1 = MV_product(rotz, point)
+ctx.fillRect(p1[0], p1[1], psize, psize);
+
+let p2 = MV_product(rotx, point)
+console.log(p2);
+ctx.fillStyle = "#AF0FA0";
+ctx.fillRect(p2[0], p2[1], psize, psize);
+
+let p3 = MV_product(roty, point)
+ctx.fillStyle = "#AAAAAA ";
+ctx.fillRect(p3[0], p3[1], psize, psize);
+
+let rotxz = MM_product(rotx, rotz)
+let p4 = MV_product(rotxz, point)
+ctx.fillStyle = "#0A8752";
+ctx.fillRect(p4[0], p4[1], psize, psize);
+
+</script>
+</HTML>
+</BODY>
