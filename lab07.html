@@ -1,0 +1,125 @@
+<html lang="ru">
+<meta charset="UTF-8">
+<body>
+
+<title>LR7</title>
+
+<canvas id='lab07' height='500' width='700' style='border:5px double'></canvas>
+<div>
+<button type="button" id="clear" style="width: 100px">Удалить</button>
+<div>
+	<script>
+	    let canvas = document.getElementById('lab07');
+	    let ctx = canvas.getContext('2d');
+	
+	    let x0 = 10;
+	    let y0 = 10;
+	    let x1 = 157;
+	    let y1 = 127;
+	    class Point {
+	        constructor(x, y) {
+	            this.x = x;
+	            this.y = y;
+	        }
+	    }
+	var button = document.getElementById('clear');
+	button.addEventListener('click',clear,false);
+	function clear()
+	{
+	ctx.clearRect(0,0,700,500);
+	}
+	    function Line(ctx, x0, y0, x1, y1) {
+	        let dy = Math.abs(y1 - y0);
+	        let dx = Math.abs(x1 - x0);
+	        let max = 0, min = 0;
+		(dx<dy)? min =dx: min =dy;
+		(dx>dy)? max =dx: max =dy;
+	        let xdir = 1;
+	        if (x1 < x0) xdir = -1;
+	        let ydir = 1;
+	        if (y1 < y0) ydir = -1;
+	        let eps = 0;
+	        let s = 1;
+	        let k = 2 * min;
+	        if (dy <= dx) {
+	            let y = y0;
+	            for (let x = x0; x * xdir <= x1 * xdir; x += xdir) {
+	                ctx.fillRect(x * s, y * s, 2 * s, 2 * s);
+	                eps+= k;
+	                if (eps > max) {
+	                    y += ydir;
+	                    eps = eps - 2 *max;
+	                }
+	            }
+	        } else {
+	            let x = x0;
+	            for (let y = y0; y * ydir <= y1 * ydir; y += ydir) {
+	                ctx.fillRect(x * s, y * s, 2 * s, 2 * s);
+	                eps = eps + k;
+	                if (eps > max) {
+	                    x += xdir;
+	                    eps = eps - 2 * max;
+	                }
+	            }
+	        }
+	    }
+
+	    	
+	    function filling_Figure(ctx, dot) {
+	        let maxy = dot[0].y, miny = dot[0].y;
+	        for (let i = 1; i < dot.length; i++) {
+	            if (dot[i].y > maxy) maxy = dot[i].y;
+	            if (dot[i].y < miny) miny = dot[i].y;
+	        }
+	        let yarray = [];
+	        for (let i = 0; i < dot.length; ++i) {
+	            let hi = 0, lo = 0;
+	            let p = 0;
+	
+	            if (i !== dot.length - 1) p = i + 1;
+	
+	            if (dot[i].y > dot[p].y) {
+	                hi = i;
+	                lo = p;
+	            } else if (dot[i].y < dot[p].y) {
+	                hi = p;
+	                lo = i;
+	            } else continue;
+	
+	            let k = (dot[hi].y - dot[lo].y) /
+	                (dot[hi].x - dot[lo].x);
+
+	            for (let j = dot[lo].y; j < dot[hi].y; ++j) {
+	                if (typeof yarray[j] == "undefined") yarray[j] = [];
+	
+	                yarray[j].push((j - dot[lo].y) / k + dot[lo].x);
+	            }
+	        }
+	
+        	for (let y = miny; y < maxy; y++) {
+	            let xarray = yarray[y].sort(function (a, b) {
+	                return a - b;
+	            });
+	            for (let j = 0; j < xarray.length / 2; ++j) {
+	                for (let k = xarray[j * 2]; k < xarray[j * 2 + 1]; k++) {
+	                    ctx.fillRect(k, y, 1, 1);
+	               }
+	            }
+	        }
+	    }
+	    let index = 0;
+	    let dot = [];
+	    canvas.addEventListener('click', function (e) {
+	        dot[index] = new Point(e.offsetX, e.offsetY);
+	        ctx.fillRect(e.offsetX, e.offsetY, 1, 1);
+        	index += 1;
+	    });
+	
+	    canvas.addEventListener("contextmenu", function () {
+	       filling_Figure(ctx, dot);
+	        index = 0;
+	        dot = [];
+	    });
+	</script>
+</body>
+</html>
