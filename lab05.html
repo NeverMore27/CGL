@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<title>LR5</title>
+</head>
+<body>
+	<h1 style = "text-align: center; font-size: 20px; margin: 15px">Лабораторная Работа 5</h1>
+	<canvas id="canvas1" style="border: 2px solid black" height="500" width="700"></canvas>
+
+	<div style="display: flex; flex-direction: column;">
+
+		<button type="button" class="b1" onclick="line();" style="width: 100px ">Линия</button>
+		<div>
+		<button type="button" class="b1" onclick="polygon()" style="width: 100px; margin-right: 1.5em; float: left;">Многогранник</button>
+		<p style="margin: 0;padding: 0">=>ПКМ для отрисовки фигуры</p>
+		</div>
+		<button type="button" class="b1" id="clear" style="width: 100px">Новый холст</button>
+	</div>
+
+<style>
+   .b1 {
+    background: navy;  
+    color: white; 
+    font-size: 9pt; 
+   }
+ </style>
+
+
+
+
+<script>
+		var ctx = document.getElementById('canvas1').getContext('2d');
+		mouse__coords = [];
+		line_array = [];
+		poly = [];
+		var button = document.getElementById('clear');
+		button.addEventListener('click',clear,false);
+		function line()
+		{
+			canvas1.removeEventListener('click', polygonListener,false);
+			canvas1.addEventListener('click',lineListener,false);
+			canvas1.removeEventListener('contextmenu', polygonListener,false);
+		}
+		function polygon()
+		{
+			canvas1.removeEventListener('click', lineListener,false);
+			canvas1.addEventListener('click',polygonListener,false);
+			canvas1.addEventListener('contextmenu',polygonListener,false);
+		}
+		function clear()
+		{
+			canvas1.removeEventListener('click', lineListener,false);
+			canvas1.removeEventListener('click', polygonListener,false);
+			canvas1.removeEventListener('contextmenu', polygonListener,false);
+			ctx.clearRect(0, 0, canvas1.width, canvas1.height);
+			line_array = [];
+			poly = [];
+		}
+
+		var lineListener = function(event)
+		{
+			mouse_event(event, 0);
+		}
+
+		var polygonListener = function(event)
+		{
+			mouse_event(event, 1);
+		}
+
+		function draw__pixel(pt)
+		{
+			ctx.fillRect(pt[0], pt[1], 1, 1);
+		}
+		function vectorProduct(pt1,pt2)
+		{
+			return pt1[0]*pt2[1]-pt2[0]*pt1[1];
+		}
+
+		function scalar(pt1,pt2)
+		{
+			return pt1[0]*pt2[0] + pt1[1]*pt2[1];
+		}
+
+		function Delta(pt1,pt2)
+		{
+			return [pt2[0]-pt1[0],pt2[1]-pt1[1]];
+		}
+
+		function normal(pt1,pt2)
+		{
+			return [pt2[1]-pt1[1],pt1[0]-pt2[0]];
+		}
+
+		function p_s(pt1, pt2, t)
+		{
+			return [pt1[0] + t*(pt2[0] - pt1[0]), pt1[1] + t*(pt2[1] - pt1[1])];
+		}
+		function mouse_event(event, type)
+		{
+			
+			var x, y;
+			var rect = canvas1.getBoundingClientRect();
+			x = event.clientX - rect.left;
+			y = event.clientY - rect.top;
+
+			if(type == 0)
+			{
+				mouse__coords.push([x, y]);
+				line_array.push([x, y]);
+				draw__pixel([x, y]);
+				if(mouse__coords.length == 2)
+				{
+					drawLine(mouse__coords[0], mouse__coords[1]);
+					mouse__coords = [];
+				}
+			}
+			else if(type == 1) {
+				event.preventDefault();
+
+				if(event.which == 1)
+				{
+					mouse__coords.push([x, y]);
+					poly.push([x, y]);
+					draw__pixel([x, y]);
+				}
+				else if(event.which == 3)
+				{
+					mouse__coords = [];
+					cyrus__beck();
+				}
+			}
+		}
+
+		function drawLine(pt1, pt2)
+		{
+			ctx.beginPath()
+			ctx.lineWidth = 1;
+			ctx.strokeStyle = "black";
+			ctx.moveTo(pt1[0], pt1[1]);
+			ctx.lineTo(pt2[0], pt2[1]);
+			ctx.stroke();
+		}
+
+		function cyrus__beck()
+		{
+			ctx.clearRect(0,0,canvas1.width, canvas1.height);
+			isClockwise = strategy();
+
+			for(let i = 0; i < line_array.length; i+=2)
+			{
+				var k0 = 0, k1 = 1;
+				var flag = true;
+
+				for(var j = 0; j < poly.length; j++)
+				{
+					if(isClockwise == '0')
+					{
+						if(j == poly.length - 1) var n = normal(poly[0],poly[j]);
+						else var n = normal(poly[j+1],poly[j]);
+					}
+					else if(isClockwise == '1')
+					{
+						if(j == poly.length - 1) var n = normal(poly[j],poly[0]);
+						else var n = normal(poly[j],poly[j+1]);
+					}
+					else
+					{
+						clear();
+						alert('No');
+						return;
+					}
+
+					var pn = scalar(Delta(line_array[i],line_array[i+1]),n);
+					var qn = scalar(Delta(poly[j],line_array[i]),n);
+
+					if(pn != 0)
+					{
+						var k = -qn/pn;
+						if(pn < 0){
+		
+							(k < k1)? k1 = k: k1 = k1;
+						}
+						else{
+							(k0 < k)? k0 = k: k0 = k0;
+						}
+					}
+					else if(qn < 0) flag = false;
+				}
+				if(k0 > k1) flag = false;
+				if(flag){
+					drawLine(p_s(line_array[i],line_array[i+1],k0),(p_s(line_array[i],line_array[i+1],k1)));
+				}
+				for(let j = 0; j < poly.length - 1; j++) {
+					drawLine(poly[j], poly[j+1]);
+				}
+				drawLine(poly[0],poly[poly.length - 1]);
+			}
+			line_array = [];
+			poly = [];
+		}
+
+		function strategy()
+		{
+			var result = [],
+			count = 0;
+			for(let i = 0; i < poly.length - 2; i++){
+				result.push(vectorProduct(Delta(poly[i],poly[i+1]),Delta(poly[i],poly[i+2])));
+			}
+			result.push(vectorProduct(Delta(poly[poly.length - 2],poly[poly.length - 1]),Delta(poly[poly.length - 2],poly[0])));
+			result.push(vectorProduct(Delta(poly[poly.length - 1],poly[0]),Delta(poly[poly.length - 1],poly[1])));
+			for(let j = 0; j < result.length; j++){
+				if(result[j]<0) count--;
+				else if(result[j]>0) count++; 
+			}
+
+			if(count == result.length) return '0';
+			else if(count == ((-1)*result.length)) return '1';
+			else return 'error_mark';
+		}
+
+		
+
+	</script>
+</body>
+</html>
